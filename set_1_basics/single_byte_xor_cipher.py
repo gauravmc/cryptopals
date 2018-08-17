@@ -17,7 +17,13 @@ def decrypt_xor_cipher(string):
         if score > curr_score:
             curr_score, message, key_char = score, curr_msg, i
 
-    return message.decode('utf-8', 'ignore'), key_char
+    result = {
+        'score': curr_score,
+        'message': message.decode('utf-8', 'ignore'),
+        'key': key_char
+    }
+
+    return result
 
 def single_char_xor(char, string):
     return bytes(str_b ^ char for str_b in bytes.fromhex(string))
