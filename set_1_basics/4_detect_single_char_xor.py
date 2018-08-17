@@ -1,16 +1,15 @@
-import os
 from single_byte_xor_cipher import decrypt_xor_cipher
 
 def detect_xored_string(filepath):
-    strings = list(map(lambda s: s.rstrip(), list(open(filepath, 'r'))))
-    curr_score, decrypted, line_num = 0, '', 0
+    curr_score, message, line_num = 0, '', 0
 
-    for i, string in enumerate(strings):
-        result = decrypt_xor_cipher(string)
-        if result['score'] > curr_score:
-            curr_score, line_num = result['score'], i
-            decrypted = result['message']
+    with open(filepath) as f:
+        for i, line in enumerate(f):
+            result = decrypt_xor_cipher(line.rstrip())
+            if result['score'] > curr_score:
+                curr_score, line_num = result['score'], i
+                message = result['message'].strip()
 
-    return f"It is the string on line number {line_num}. Decrypted message: {decrypted}"
+    return f"It is the string on line number {line_num}. Decrypted message: {message}"
 
 print(detect_xored_string(os.path.dirname(os.path.abspath(__file__)) + '/files/challenge_4.txt'))
