@@ -1,3 +1,4 @@
+import os
 from single_byte_xor_cipher import decrypt_xor_cipher
 
 def detect_xored_string(filepath):
@@ -10,6 +11,16 @@ def detect_xored_string(filepath):
                 curr_score, line_num = result['score'], i
                 message = result['message'].strip()
 
-    return f"It is the string on line number {line_num}. Decrypted message: {message}"
+    return {'line_num': line_num, 'message': message}
 
-print(detect_xored_string(os.path.dirname(os.path.abspath(__file__)) + '/files/challenge_4.txt'))
+import unittest
+
+class TestSet1Challenge4(unittest.TestCase):
+    def test_challenge(self):
+        result = detect_xored_string(os.path.dirname(os.path.abspath(__file__)) + '/files/challenge_4.txt')
+
+        self.assertEqual(170, result['line_num'])
+        self.assertEqual('Now that the party is jumping', result['message'])
+
+if __name__ == '__main__':
+    unittest.main()

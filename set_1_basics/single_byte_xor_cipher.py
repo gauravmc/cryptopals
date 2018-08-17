@@ -28,4 +28,14 @@ def decrypt_xor_cipher(string):
 def single_char_xor(char, string):
     return bytes(str_b ^ char for str_b in bytes.fromhex(string))
 
-# print(decrypt_xor_cipher('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736'))
+import unittest
+
+class TestSet1Challenge3(unittest.TestCase):
+    def test_challenge(self):
+        result = decrypt_xor_cipher('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736')
+
+        self.assertEqual(88, result['key'])
+        self.assertEqual("Cooking MC's like a pound of bacon", result['message'])
+
+if __name__ == '__main__':
+    unittest.main()
