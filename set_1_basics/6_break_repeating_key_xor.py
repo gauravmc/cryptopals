@@ -1,5 +1,40 @@
 import os
 import base64
+from single_byte_xor_cipher import decrypt_xor_cipher
+
+def key_for_vigenere_cipher(filepath):
+    cipher_file = open(filepath)
+    ciphertext = base64.b64decode(''.join(cipher_file.readlines()))
+
+    key_size = key_size_with_lowest_avg_ham_distance(ciphertext)
+
+    for size in range(key_size, key_size + 3): # Take first 2-3 smallest key sizes
+        blocks = transpose_ciphertext_in_blocks_for_size(ciphertext, size)
+        for block in blocks:
+            print(decrypt_xor_cipher(block.hex())['message'])
+
+    cipher_file.close()
+    return 'key'
+
+def transpose_ciphertext_in_blocks_for_size(ciphertext, key_size):
+    blocks = [b''] * key_size
+
+    for chunk in chunks_by_size(ciphertext, key_size):
+        for i in range(key_size): blocks[i] += chunk[i:i + 1]
+
+    return blocks
+
+def key_size_with_lowest_avg_ham_distance(ciphertext):
+    winning_key_size = 0
+    lowest_distance = 2**100 # Arbitrary large int
+
+    for key_size in range(2, 41):
+        distance = avg_hamming_distance_for_chunk(ciphertext, key_size)
+        if distance < lowest_distance:
+            lowest_distance = distance
+            winning_key_size = key_size
+
+    return winning_key_size
 
 def avg_hamming_distance_for_chunk(ciphertext, chunk_size):
     total_chunks = 0
@@ -32,6 +67,43 @@ def chunks_by_size(seq, size):
 import unittest
 
 class TestSet1Challenge6(unittest.TestCase):
+    def test_breaking_vigenere(self):
+        filepath = os.path.dirname(os.path.abspath(__file__)) + '/files/challenge_6.txt'
+        key = key_for_vigenere_cipher(filepath)
+        expected = 'key'
+
+        self.assertEqual(expected, key)
+
+    def test_transpose_cipher_blocks_for_size(self):
+        cipher_string = "0e3647e8592d35514a081243582536ed3de6734059001e3f535ce6271032"
+        ciphertext = base64.b64decode(cipher_string)
+
+        blocks = transpose_ciphertext_in_blocks_for_size(ciphertext, 2)
+
+        expected = b'\xd1\xfa\xb7\xe7\x9d\x9e\xe1<n\xe7\xb9\xa7\xdd\xba~\xe74\xed\xe7\\\xad\xd7\xf6'
+        self.assertEqual(expected, blocks[0])
+        expected = b'\xed\xe3\xbc\xdd\xdfu\xad\xd77\xcd\xdf\x9d\xd7\xef4\xdd\xd5\xdf~{\xbbM'
+        self.assertEqual(expected, blocks[1])
+
+        cipher_string = "0e3647e8592d35514a081243582536ed3de6734059001e3f535ce6271032"
+        ciphertext = base64.b64decode(cipher_string)
+
+        blocks = transpose_ciphertext_in_blocks_for_size(ciphertext, 4)
+        self.assertEqual(b'\xd1\xb7\x9d\xe1n\xb9\xdd~4\xe7\xad\xf6', blocks[0])
+        self.assertEqual(b'\xed\xbc\xdf\xad7\xdf\xd74\xd5~\xbb', blocks[1])
+        self.assertEqual(b'\xfa\xe7\x9e<\xe7\xa7\xba\xe7\xed\\\xd7', blocks[2])
+        self.assertEqual(b'\xe3\xddu\xd7\xcd\x9d\xef\xdd\xdf{M', blocks[3])
+
+    def test_lowest_winning_key_size(self):
+        cipher_string = "0e3647e8592d35514a081243582536ed3de6734059001e3f535ce6271032\n"\
+                        "334b041de124f73c18011a50e608097ac308ecee501337ec3e100854201d\n"\
+                        "40e127f51c10031d0133590b1e490f3514e05a54143d08222c2a4071e351\n"\
+                        "45440b171d5c1b21342e021c3a0eee7373215c4024f0eb733cf006e2040c"
+        ciphertext = base64.b64decode(cipher_string)
+
+        result = key_size_with_lowest_avg_ham_distance(ciphertext)
+        self.assertEqual(2, result)
+
     def test_average_hamming_distance(self):
         cipher_string = "0e3647e8592d35514a081243582536ed3de6734059001e3f535ce6271032\n"\
                         "334b041de124f73c18011a50e608097ac308ecee501337ec3e100854201d\n"\
