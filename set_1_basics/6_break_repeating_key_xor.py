@@ -6,12 +6,11 @@ def key_for_vigenere_cipher(filepath):
     cipher_file = open(filepath)
     ciphertext = base64.b64decode(''.join(cipher_file.readlines()))
 
-    key_size = key_size_with_lowest_avg_ham_distance(ciphertext)
-
-    for size in range(key_size, key_size + 3): # Take first 2-3 smallest key sizes
-        blocks = transpose_ciphertext_in_blocks_for_size(ciphertext, size)
-        for block in blocks:
-            print(decrypt_xor_cipher(block.hex())['message'])
+    key_size = key_size_with_lowest_normalized_distance(ciphertext)
+    blocks = transpose_ciphertext_in_blocks_for_size(ciphertext, key_size)
+    for i, block in enumerate(blocks):
+        result = decrypt_xor_cipher(block.hex())
+        print(chr(result['key']), result['score'])
 
     cipher_file.close()
     return 'key'
@@ -24,33 +23,20 @@ def transpose_ciphertext_in_blocks_for_size(ciphertext, key_size):
 
     return blocks
 
-def key_size_with_lowest_avg_ham_distance(ciphertext):
+def key_size_with_lowest_normalized_distance(ciphertext):
     winning_key_size = 0
     lowest_distance = 2**100 # Arbitrary large int
 
     for key_size in range(2, 41):
-        distance = avg_hamming_distance_for_chunk(ciphertext, key_size)
-        if distance < lowest_distance:
-            lowest_distance = distance
+        chunk1 = ciphertext[0:key_size]
+        chunk2 = ciphertext[key_size:key_size * 2]
+        normalized_distance = hamming_distance(chunk1, chunk2) / key_size
+
+        if normalized_distance < lowest_distance:
+            lowest_distance = normalized_distance
             winning_key_size = key_size
 
     return winning_key_size
-
-def avg_hamming_distance_for_chunk(ciphertext, chunk_size):
-    total_chunks = 0
-    distances_of_all_chunks = 0
-
-    previous_chunk, previously_processed_chunk = b'', b''
-    for chunk in chunks_by_size(ciphertext, chunk_size):
-        total_chunks += 1
-
-        if previous_chunk != previously_processed_chunk:
-            distances_of_all_chunks += hamming_distance(previous_chunk, chunk)
-            previously_processed_chunk = chunk
-
-        previous_chunk = chunk
-
-    return int(round(distances_of_all_chunks / total_chunks))
 
 def hamming_distance(bytes1, bytes2):
     distance = 0
@@ -101,26 +87,14 @@ class TestSet1Challenge6(unittest.TestCase):
                         "45440b171d5c1b21342e021c3a0eee7373215c4024f0eb733cf006e2040c"
         ciphertext = base64.b64decode(cipher_string)
 
-        result = key_size_with_lowest_avg_ham_distance(ciphertext)
-        self.assertEqual(2, result)
-
-    def test_average_hamming_distance(self):
-        cipher_string = "0e3647e8592d35514a081243582536ed3de6734059001e3f535ce6271032\n"\
-                        "334b041de124f73c18011a50e608097ac308ecee501337ec3e100854201d\n"\
-                        "40e127f51c10031d0133590b1e490f3514e05a54143d08222c2a4071e351\n"\
-                        "45440b171d5c1b21342e021c3a0eee7373215c4024f0eb733cf006e2040c"
-
-        ciphertext = base64.b64decode(cipher_string)
-        chunk_size = 4
-        self.assertEqual(8, avg_hamming_distance_for_chunk(ciphertext, chunk_size))
+        result = key_size_with_lowest_normalized_distance(ciphertext)
+        self.assertEqual(12, result)
 
         cipher_file = open(os.path.dirname(os.path.abspath(__file__)) + '/files/challenge_6.txt')
         ciphertext = base64.b64decode(''.join(cipher_file.readlines()))
+        result = key_size_with_lowest_normalized_distance(ciphertext)
 
-        chunk_size = 4
-        self.assertEqual(6, avg_hamming_distance_for_chunk(ciphertext, chunk_size))
-        chunk_size = 8
-        self.assertEqual(13, avg_hamming_distance_for_chunk(ciphertext, chunk_size))
+        self.assertEqual(5, result)
 
         cipher_file.close()
 
