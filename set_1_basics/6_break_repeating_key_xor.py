@@ -5,17 +5,15 @@ def avg_hamming_distance_for_chunk(ciphertext, chunk_size):
     total_chunks = 0
     distances_of_all_chunks = 0
 
-    last_chunk = b''
-    processed_chunks = set()
+    previous_chunk, previously_processed_chunk = b'', b''
     for chunk in chunks_by_size(ciphertext, chunk_size):
         total_chunks += 1
 
-        if len(last_chunk) > 0 and last_chunk not in processed_chunks:
-            distances_of_all_chunks += hamming_distance(last_chunk, chunk)
-            processed_chunks.add(last_chunk)
-            processed_chunks.add(chunk)
+        if previous_chunk != previously_processed_chunk:
+            distances_of_all_chunks += hamming_distance(previous_chunk, chunk)
+            previously_processed_chunk = chunk
 
-        last_chunk = chunk
+        previous_chunk = chunk
 
     return int(round(distances_of_all_chunks / total_chunks))
 
