@@ -1,12 +1,12 @@
 import os
-from single_byte_xor_cipher import decrypt_xor_cipher
+from single_byte_xor_cipher import decrypt_single_xor_cipher
 
 def detect_xored_string(filepath):
     curr_score, message, line_num = 0, '', 0
 
     with open(filepath) as f:
         for i, line in enumerate(f):
-            result = decrypt_xor_cipher(line.rstrip())
+            result = decrypt_single_xor_cipher(line.rstrip())
             if result['score'] > curr_score:
                 curr_score, line_num = result['score'], i
                 message = result['message'].strip()

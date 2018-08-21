@@ -8,7 +8,7 @@ LETTER_FREQS = {
     'X': 0.15, 'Q': 0.10, 'Z': 0.07
 }
 
-def decrypt_xor_cipher(string):
+def decrypt_single_xor_cipher(string):
     curr_score, message, key_char = 0, '', 0
 
     for i in range(0, 256):
@@ -32,7 +32,7 @@ import unittest
 
 class TestSet1Challenge3(unittest.TestCase):
     def test_challenge(self):
-        result = decrypt_xor_cipher('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736')
+        result = decrypt_single_xor_cipher('1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736')
 
         self.assertEqual(88, result['key'])
         self.assertEqual("Cooking MC's like a pound of bacon", result['message'])

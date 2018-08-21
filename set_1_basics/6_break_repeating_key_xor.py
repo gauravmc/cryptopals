@@ -1,27 +1,25 @@
 import os
 import base64
-import itertools
-from single_byte_xor_cipher import decrypt_xor_cipher
+from single_byte_xor_cipher import decrypt_single_xor_cipher
+from repeating_key_xor import repeating_key_xor
 
 def decrypt_vigenere_cipher(filepath):
     with open(filepath) as f:
         ciphertext = base64.b64decode(f.read())
-
         key = key_for_vigenere_cipher(ciphertext)
-        key = itertools.cycle(key)
-        return bytes(b ^ ord(next(key)) for b in ciphertext)
+        return bytes.fromhex(repeating_key_xor(key, ciphertext))
 
 def key_for_vigenere_cipher(ciphertext):
     key_size = key_size_with_lowest_normalized_distance(ciphertext)
-    blocks = transpose_ciphertext_in_blocks_for_size(ciphertext, key_size)
+    blocks = transpose_ciphertext_blocks_of_size(ciphertext, key_size)
     key_chars = []
     for block in blocks:
-        result = decrypt_xor_cipher(block.hex())
+        result = decrypt_single_xor_cipher(block.hex())
         key_chars.append(chr(result['key']))
 
     return ''.join(key_chars)
 
-def transpose_ciphertext_in_blocks_for_size(ciphertext, key_size):
+def transpose_ciphertext_blocks_of_size(ciphertext, key_size):
     blocks = [b''] * key_size
 
     for chunk in chunks_by_size(ciphertext, key_size):
@@ -30,16 +28,12 @@ def transpose_ciphertext_in_blocks_for_size(ciphertext, key_size):
     return blocks
 
 def key_size_with_lowest_normalized_distance(ciphertext):
-    winning_key_size = 0
-    lowest_distance = 2**100 # Arbitrary large int
-
+    distances = []
     for key_size in range(2, 41):
         avg_distance = avg_hamming_distance_for_chunk(ciphertext, key_size)
-        if avg_distance < lowest_distance:
-            lowest_distance = avg_distance
-            winning_key_size = key_size
+        distances.append({'key_size': key_size, 'avg_distance': avg_distance})
 
-    return winning_key_size
+    return sorted(distances, key=lambda x: x['avg_distance'])[0]['key_size']
 
 def avg_hamming_distance_for_chunk(ciphertext, chunk_size):
     distances = []
@@ -83,11 +77,11 @@ class TestSet1Challenge6(unittest.TestCase):
 
         self.assertEqual(expected, result)
 
-    def test_transpose_cipher_blocks_for_size(self):
+    def test_transpose_ciphertext_blocks_of_size(self):
         cipher_string = "0e3647e8592d35514a081243582536ed3de6734059001e3f535ce6271032"
         ciphertext = base64.b64decode(cipher_string)
 
-        blocks = transpose_ciphertext_in_blocks_for_size(ciphertext, 2)
+        blocks = transpose_ciphertext_blocks_of_size(ciphertext, 2)
 
         expected = b'\xd1\xfa\xb7\xe7\x9d\x9e\xe1<n\xe7\xb9\xa7\xdd\xba~\xe74\xed\xe7\\\xad\xd7\xf6'
         self.assertEqual(expected, blocks[0])
@@ -97,7 +91,7 @@ class TestSet1Challenge6(unittest.TestCase):
         cipher_string = "0e3647e8592d35514a081243582536ed3de6734059001e3f535ce6271032"
         ciphertext = base64.b64decode(cipher_string)
 
-        blocks = transpose_ciphertext_in_blocks_for_size(ciphertext, 4)
+        blocks = transpose_ciphertext_blocks_of_size(ciphertext, 4)
         self.assertEqual(b'\xd1\xb7\x9d\xe1n\xb9\xdd~4\xe7\xad\xf6', blocks[0])
         self.assertEqual(b'\xed\xbc\xdf\xad7\xdf\xd74\xd5~\xbb', blocks[1])
         self.assertEqual(b'\xfa\xe7\x9e<\xe7\xa7\xba\xe7\xed\\\xd7', blocks[2])
