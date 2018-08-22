@@ -1,4 +1,7 @@
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join('lib')))
+import utils
 
 #  Remember that the problem with ECB is that it is stateless and deterministic; the same 16 byte plaintext block will always produce the same 16 byte ciphertext.
 
@@ -8,35 +11,10 @@ def detect_which_aes_is_ecb_mode(ciphertexts):
 
     for key_length in key_lenghts:
         for ciphertext in ciphertexts:
-            distance = avg_hamming_distance_over_chunk_size(ciphertext, key_length)
+            distance = utils.avg_hamming_distance_over_chunk_size(ciphertext, key_length)
             distances.append({'distance': distance, 'ciphertext': ciphertext})
 
     return sorted(distances, key=lambda x: x['distance'])[0]['ciphertext']
-
-def avg_hamming_distance_over_chunk_size(ciphertext, chunk_size):
-    distances = []
-    previous_chunk, previously_processed_chunk = b'', b''
-
-    for chunk in chunks_by_size(ciphertext, chunk_size):
-        if previous_chunk != previously_processed_chunk:
-            distances.append(hamming_distance(previous_chunk, chunk) / chunk_size)
-            previously_processed_chunk = chunk
-
-        previous_chunk = chunk
-
-    return sum(distances) / len(distances)
-
-def hamming_distance(bytes1, bytes2):
-    distance = 0
-
-    for int1, int2 in zip(bytes1, bytes2):
-        bin1, bin2 = '{:016b}'.format(int1), '{:016b}'.format(int2)
-        distance += sum(bit1 != bit2 for bit1, bit2 in zip(bin1, bin2))
-
-    return distance
-
-def chunks_by_size(seq, size):
-    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 import unittest
 
