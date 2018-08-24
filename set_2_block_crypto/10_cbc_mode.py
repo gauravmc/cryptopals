@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.abspath(os.path.join('lib')))
 import utils
-from pkcs_7_padding import add_pkcs_padding
+import pkcs_7_padding
 from Crypto.Cipher import AES
 
 AES_KEY_LENGTHS = [16, 24, 32]
@@ -9,12 +9,9 @@ AES_KEY_LENGTHS = [16, 24, 32]
 def encrypt_with_aes_cbc_mode(key, plaintext):
     key = key.encode()
     if len(key) not in AES_KEY_LENGTHS: raise Exception("Invalid key length, must be either 16, 24, or 32.")
+
     block_size = len(key)
-
-    if (len(plaintext) % block_size != 0):
-        expected_size = len(plaintext) + (block_size - len(plaintext) % block_size)
-        plaintext = add_pkcs_padding(plaintext, expected_size)
-
+    plaintext = pkcs_7_padding.add_pkcs_padding_by_block_size(plaintext, block_size)
     iv = chr(0).encode() * block_size
 
     previous_cipher_block = iv
