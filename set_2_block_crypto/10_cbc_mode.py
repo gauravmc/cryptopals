@@ -1,9 +1,7 @@
-import unittest
-from pkcs_7_padding import add_pkcs_padding
 import sys, os
 sys.path.append(os.path.abspath(os.path.join('lib')))
 import utils
-import base64
+from pkcs_7_padding import add_pkcs_padding
 from Crypto.Cipher import AES
 
 AES_KEY_LENGTHS = [16, 24, 32]
@@ -44,6 +42,9 @@ def decrypt_aes_cbc_mode_cipher(key, ciphertext, iv):
         plaintext += plaintext_block
 
     return plaintext
+
+import unittest
+import base64
 
 class TestSet2Challenge10(unittest.TestCase):
     def test_encrypt_with_aes_cbc_mode(self):
@@ -89,6 +90,17 @@ class TestSet2Challenge10(unittest.TestCase):
                 " amet, consectetur adipiscing elit. Sed sit amet dolor erat.\t\t\t\t\t\t\t\t\t".encode()
 
         self.assertEqual(expected, result)
+
+    def test_decryption_of_given_cbc_cipher_file(self):
+        with open(os.path.dirname(os.path.abspath(__file__)) + '/files/challenge_10.txt') as f:
+            ciphertext = base64.b64decode(f.read())
+            key = "YELLOW SUBMARINE"
+            iv = chr(0).encode() * len(key)
+
+            result = decrypt_aes_cbc_mode_cipher(key, ciphertext, iv)
+
+            expected = "I'm back and I'm ringin' the bell \nA rocki"
+            self.assertEqual(expected, result.decode()[0:42])
 
     def test_assert_invalid_key_length(self):
         with self.assertRaises(Exception) as cm:
