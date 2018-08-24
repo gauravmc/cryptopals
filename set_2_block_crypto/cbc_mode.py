@@ -6,13 +6,13 @@ from Crypto.Cipher import AES
 
 AES_KEY_LENGTHS = [16, 24, 32]
 
-def encrypt_with_aes_cbc_mode(key, plaintext):
+def encrypt_with_aes_cbc_mode(key, plaintext, iv = None):
     key = key.encode()
     if len(key) not in AES_KEY_LENGTHS: raise Exception("Invalid key length, must be either 16, 24, or 32.")
 
     block_size = len(key)
     plaintext = pkcs_7_padding.add_pkcs_padding_by_block_size(plaintext, block_size)
-    iv = chr(0).encode() * block_size
+    if iv is None: iv = chr(0).encode() * block_size
 
     previous_cipher_block = iv
     ecb = AES.new(key, AES.MODE_ECB)
@@ -63,6 +63,20 @@ class TestSet2Challenge10(unittest.TestCase):
                 b'+Qbs5/3rl+OT/QDVtqxi0YqUNeHkF7NVkhGHT+KPiySythnchkGSErdRyxV1k4rfHaS6xKuNdfFTS7BwlB'\
                 b'Wu76VEaCzVlwv2SlnnYNA0AMqAUHFytZ4LmeJhfBaBw=='
 
+        self.assertEqual(expected, result)
+
+    def test_encrypt_with_aes_cbc_mode_with_optional_iv(self):
+        key = "THE ANSWER IS 42"
+        iv = chr(10).encode() * len(key)
+        plaintext = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam eleifend porta odio"\
+                " sed rhoncus. Maecenas sed condimentum ligula, ut scelerisque magna.".encode()
+
+        result = encrypt_with_aes_cbc_mode(key, plaintext, iv)
+        result = base64.b64encode(result)
+
+        expected = b'KCBXWIMIGsFiq9Y/kFInid+awsKAtH3hajZ0Fl9bfQ+1DwZiECFmWn5M41kVMJqx8PlsDT+bIhA'\
+                b'ghOYcrMkd8fatNVu8y3G2J4ebY7W2g05hc9hDycIq0sdjVSMaUHBamRe0ewFPBEA03qYvbG4IkZh'\
+                b'+Bq/P4kYKoAImYSBoe0FTzoLt93Pjn+3OGq8FRiMl6qxu0zh8qrFk+wAAYJC+tw=='
         self.assertEqual(expected, result)
 
     def test_decrypt_aes_cbc_mode_cipher(self):
