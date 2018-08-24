@@ -30,6 +30,21 @@ def encrypt_with_aes_cbc_mode(key, plaintext):
 
     return ciphertext
 
+def decrypt_aes_cbc_mode_cipher(key, ciphertext, iv):
+    key = key.encode()
+    if len(key) not in AES_KEY_LENGTHS: raise Exception("Invalid key length, must be either 16, 24, or 32.")
+
+    previous_block = iv
+    ecb = AES.new(key, AES.MODE_ECB)
+    plaintext = b''
+    for block in utils.chunks_by_size(ciphertext, len(key)):
+        decrypted_block = ecb.decrypt(block)
+        plaintext_block = bytes(b1 ^ b2 for b1, b2 in zip(decrypted_block, previous_block))
+        previous_block = block
+        plaintext += plaintext_block
+
+    return plaintext
+
 class TestSet2Challenge10(unittest.TestCase):
     def test_encrypt_with_aes_cbc_mode(self):
         key = "YELLOW SUBMARINE"
@@ -52,9 +67,37 @@ class TestSet2Challenge10(unittest.TestCase):
 
         self.assertEqual(expected, result)
 
+    def test_decrypt_aes_cbc_mode_cipher(self):
+        key = "THE ANSWER IS 42"
+        iv = chr(0).encode() * len(key)
+        cipher = b'NBo4N27GikuJ8L2iJUOVNykAOBEMVTptg9Bg/JHCwZSkB77elJh/RkPcFbCIyZhR5+gyCO14aYwJzHya'\
+                b'HyM353gS2sKOhKqBnZE/Kmyxlphc/wozbEuXZPy7KZDPv1oL5QiQVynqPwTGLTmTppYxnP+EY7kAzah'\
+                b'GoWubUatyaf8i1OlZwRGWCqRS8GHJZ9j12EfK7zkwBVLM/0q4FWf8A8kvDfkr9gfTOZPXE22pIQlxHF'\
+                b'Z8MNaSihm/H6m+2DIrK77SVIPLFJrRWc1rFs9vMYxKYmBBSArWpJMaD7bYU+/DhBNnz/4xYU6sf8a0h'\
+                b'NV69CibOHDWZcTnavTxbBSndRPi6c0EpSJtFxTeVDJ9Z0e+gbcFPJoAwCQScjppbVJOZXVXrDGzw77g'\
+                b'XKs3J8K/zEsAf+1Gx6IfPaudwagmEGCclqCUaVVXlC9BQaLSz7GoBwumuLN8ZWR9iARTR6QCyrmRjtW'\
+                b'5OhSQ7mJ90wRyiblkXsPQISxXvfFNPRXVwRM5KJYsP2VGZpuBCWE0StmM9A=='
+
+        ciphertext = base64.b64decode(cipher)
+
+        result = decrypt_aes_cbc_mode_cipher(key, ciphertext, iv)
+
+        expected = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam eleifend porta odio"\
+                " sed rhoncus. Maecenas sed condimentum ligula, ut scelerisque magna. Pellentesque"\
+                " posuere dolor id venenatis porta. Duis eget aliquet tortor. Suspendisse at est velit."\
+                " Ut tortor felis, dignissim sed maximus ac, dictum eget nulla. Lorem ipsum dolor sit"\
+                " amet, consectetur adipiscing elit. Sed sit amet dolor erat.\t\t\t\t\t\t\t\t\t".encode()
+
+        self.assertEqual(expected, result)
+
     def test_assert_invalid_key_length(self):
         with self.assertRaises(Exception) as cm:
             encrypt_with_aes_cbc_mode("INVALID KEY", "encrypt me".encode())
+
+        self.assertEqual("Invalid key length, must be either 16, 24, or 32.", str(cm.exception))
+
+        with self.assertRaises(Exception) as cm:
+            decrypt_aes_cbc_mode_cipher("INVALID KEY", "decrypt me".encode(), chr(0).encode())
 
         self.assertEqual("Invalid key length, must be either 16, 24, or 32.", str(cm.exception))
 
